@@ -123,6 +123,10 @@ config CPU_FREQ_DEFAULT_GOV_PEGASUSQ
 	bool "pegasusq"
 	select CPU_FREQ_GOV_PEGASUSQ
 
+config CPU_FREQ_DEFAULT_GOV_HOTPLUG
+	bool "hotplug"
+	select CPU_FREQ_GOV_HOTPLUG
+
 endchoice
 
 config CPU_FREQ_GOV_PERFORMANCE
@@ -270,6 +274,9 @@ config CPU_FREQ_GOV_PEGASUSQ_BOOST
 	bool "pegasusq - enable suport for userspace-controlled cpu boosts"
 	depends on CPU_FREQ_GOV_PEGASUSQ
 	default n
+
+config CPU_FREQ_GOV_HOTPLUG
+	tristate "'hotplug' cpufreq policy governor"
 
 config CPU_FREQ_GOV_SLP
 	tristate "'slp' cpufreq policy governor"

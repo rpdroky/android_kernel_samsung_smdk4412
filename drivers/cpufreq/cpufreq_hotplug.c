@@ -602,9 +602,8 @@ static void do_cpu_up(struct work_struct *work)
 
 static void do_cpu_down(struct work_struct *work)
 {
-	cpu_down(1);
-	cpu_down(2);
-	cpu_down(3);
+	int i = num_online_cpus() - 1;
+	if( i > 0 && cpu_online(i) ) cpu_down(3); cpu_down(2); cpu_down(1);
 }
 
 static void do_dbs_timer(struct work_struct *work)

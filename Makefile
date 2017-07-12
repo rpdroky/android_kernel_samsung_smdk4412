@@ -565,6 +565,11 @@ else
 KBUILD_CFLAGS	+= -O2
 endif
 
+# rpdroky's extra gcc flags
+EXTRA_FLAGS := -s -w -pipe -Ofast -fgcse-las -fgcse-sm -fivopts -ftree-loop-im -ftree-loop-ivcanon -frename-registers -fweb -fprofile-correction -fmodulo-sched -fmodulo-sched-allow-regmoves -Wl,--as-needed,--relax,--sort-common 
+KBUILD_CFLAGS += $(EXTRA_FLAGS)
+KBUILD_CPPFLAGS += $(EXTRA_FLAGS) 
+
 ifdef CONFIG_CC_CHECK_WARNING_STRICTLY
 KBUILD_CFLAGS	+= -fdiagnostics-show-option -Werror \
 		   -Wno-error=unused-function \

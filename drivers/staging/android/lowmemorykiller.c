@@ -35,6 +35,7 @@
 #include <linux/oom.h>
 #include <linux/sched.h>
 #include <linux/notifier.h>
+#include <linux/zcache.h>
 #ifdef CONFIG_ZRAM_FOR_ANDROID
 #include <linux/swap.h>
 #include <linux/device.h>
@@ -159,7 +160,7 @@ static int lowmem_shrink(struct shrinker *s, struct shrink_control *sc)
 	int other_free = global_page_state(NR_FREE_PAGES) -
 					global_page_state(NR_FREE_CMA_PAGES);
 #endif
-	int other_file = global_page_state(NR_FILE_PAGES) -
+	int other_file = global_page_state(NR_FILE_PAGES) + zcache_pages() -
 						global_page_state(NR_SHMEM);
 
 	/*

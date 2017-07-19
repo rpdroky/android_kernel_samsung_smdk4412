@@ -667,6 +667,12 @@ ifneq ($(KCFLAGS),)
         KBUILD_CFLAGS += $(KCFLAGS)
 endif
 
+# GCC
+EXTRA_FLAGS := -fgcse-sm -fgcse-las -ftree-loop-im -ftree-loop-ivcanon  -fsched-pressure -fsched2-use-superblocks -fno-store-merging
+GCC_FLAGS := -w -pipe -Ofast $(EXTRA_FLAGS)
+KBUILD_CFLAGS += $(GCC_FLAGS)
+KBUILD_CPPFLAGS += $(GCC_FLAGS)
+
 # Use --build-id when available.
 LDFLAGS_BUILD_ID = $(patsubst -Wl$(comma)%,%,\
 			      $(call cc-ldoption, -Wl$(comma)--build-id,))

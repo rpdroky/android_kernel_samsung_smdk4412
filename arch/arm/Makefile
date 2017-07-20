@@ -254,6 +254,7 @@ core-$(CONFIG_VFP)		+= arch/arm/vfp/
 core-y				+= arch/arm/kernel/ arch/arm/mm/ arch/arm/common/
 core-y				+= $(machdirs) $(platdirs)
 core-y				+= arch/arm/crypto/
+core-$(CONFIG_BLU_PLUG) += arch/arm/hotplug/
 
 drivers-$(CONFIG_OPROFILE)      += arch/arm/oprofile/
 

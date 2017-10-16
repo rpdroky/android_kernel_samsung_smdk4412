@@ -642,8 +642,8 @@ static void hotplug_suspend(int suspend)
 		pr_info("[imoseyon] hotplugx awake cpu1 up\n");
 	} else {
 		suspended = 1;
-                if (num_online_cpus() > 1) cpu_down(1);
-		pr_info("[imoseyon] hotplugx suspended cpu1 down\n");
+                if (num_online_cpus() > 1) cpu_down(1); cpu_down(2); cpu_down(3);
+		pr_info("[imoseyon] hotplugx suspended cpu1 cpu2 and cpu3 down\n");
 	}
 }
 static void hotplug_early_suspend(struct early_suspend *handler) {

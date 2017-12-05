@@ -642,13 +642,15 @@ static void hotplug_suspend(int suspend)
 {
 	if (!susp_enabled) return;
         if (!suspend) {
+        int i = num_online_cpus();
 		suspended = 0;
-		if (num_online_cpus() < 2) cpu_up(1);
-		pr_info("[imoseyon] hotplugx awake cpu1 up\n");
+		if( i < num_possible_cpus() && !cpu_online(i) ) cpu_up(i);
+		pr_info("[imoseyon] hotplugx can awake any cpu up\n");
 	} else {
+        int i = num_online_cpus() - 1;
 		suspended = 1;
-                if (num_online_cpus() > 1) cpu_down(1);
-		pr_info("[imoseyon] hotplugx suspended cpu1 down\n");
+        if( i > 0 && cpu_online(i) ) cpu_down(i);
+		pr_info("[imoseyon] hotplugx can suspend any online cpu except cpu0\n");
 	}
 }
 static void hotplug_early_suspend(struct early_suspend *handler) {

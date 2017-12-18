@@ -115,8 +115,6 @@ static struct dbs_tuners {
 	unsigned int hotplug_out_sampling_periods;
 	unsigned int hotplug_load_index;
 	unsigned int *hotplug_load_history;
-	unsigned int ignore_nice;
-	unsigned int io_is_busy;
 } dbs_tuners_ins = {
 	.sampling_rate =		DEFAULT_SAMPLING_PERIOD,
 	.up_threshold =			DEFAULT_UP_FREQ_MIN_LOAD,
@@ -125,32 +123,14 @@ static struct dbs_tuners {
 	.hotplug_in_sampling_periods =	DEFAULT_HOTPLUG_IN_SAMPLING_PERIODS,
 	.hotplug_out_sampling_periods =	DEFAULT_HOTPLUG_OUT_SAMPLING_PERIODS,
 	.hotplug_load_index =		0,
-	.ignore_nice =			0,
-	.io_is_busy =			0,
 };
 
-/*
- * A corner case exists when switching io_is_busy at run-time: comparing idle
- * times from a non-io_is_busy period to an io_is_busy period (or vice-versa)
- * will misrepresent the actual change in system idleness.  We ignore this
- * corner case: enabling io_is_busy might cause freq increase and disabling
- * might cause freq decrease, which probably matches the original intent.
- */
 static inline cputime64_t get_cpu_idle_time(unsigned int cpu, cputime64_t *wall)
 {
         u64 idle_time;
-        u64 iowait_time;
 
         /* cpufreq-hotplug always assumes CONFIG_NO_HZ */
         idle_time = get_cpu_idle_time_us(cpu, wall);
-
-	/* add time spent doing I/O to idle time */
-        if (dbs_tuners_ins.io_is_busy) {
-                iowait_time = get_cpu_iowait_time_us(cpu, wall);
-                /* cpufreq-hotplug always assumes CONFIG_NO_HZ */
-                if (iowait_time != -1ULL && idle_time >= iowait_time)
-                        idle_time -= iowait_time;
-        }
 
         return idle_time;
 }
@@ -172,8 +152,6 @@ show_one(down_differential, down_differential);
 show_one(down_threshold, down_threshold);
 show_one(hotplug_in_sampling_periods, hotplug_in_sampling_periods);
 show_one(hotplug_out_sampling_periods, hotplug_out_sampling_periods);
-show_one(ignore_nice_load, ignore_nice);
-show_one(io_is_busy, io_is_busy);
 
 static ssize_t store_sampling_rate(struct kobject *a, struct attribute *b,
 				   const char *buf, size_t count)
@@ -342,68 +320,12 @@ out:
 	return ret;
 }
 
-static ssize_t store_ignore_nice_load(struct kobject *a, struct attribute *b,
-				      const char *buf, size_t count)
-{
-	unsigned int input;
-	int ret;
-
-	unsigned int j;
-
-	ret = sscanf(buf, "%u", &input);
-	if (ret != 1)
-		return -EINVAL;
-
-	if (input > 1)
-		input = 1;
-
-	mutex_lock(&dbs_mutex);
-	if (input == dbs_tuners_ins.ignore_nice) { /* nothing to do */
-		mutex_unlock(&dbs_mutex);
-		return count;
-	}
-	dbs_tuners_ins.ignore_nice = input;
-
-	/* we need to re-evaluate prev_cpu_idle */
-	for_each_online_cpu(j) {
-		struct cpu_dbs_info_s *dbs_info;
-		dbs_info = &per_cpu(hp_cpu_dbs_info, j);
-		dbs_info->prev_cpu_idle = get_cpu_idle_time(j,
-						&dbs_info->prev_cpu_wall);
-		if (dbs_tuners_ins.ignore_nice)
-			dbs_info->prev_cpu_nice = kstat_cpu(j).cpustat.nice;
-
-	}
-	mutex_unlock(&dbs_mutex);
-
-	return count;
-}
-
-static ssize_t store_io_is_busy(struct kobject *a, struct attribute *b,
-				   const char *buf, size_t count)
-{
-	unsigned int input;
-	int ret;
-
-	ret = sscanf(buf, "%u", &input);
-	if (ret != 1)
-		return -EINVAL;
-
-	mutex_lock(&dbs_mutex);
-	dbs_tuners_ins.io_is_busy = !!input;
-	mutex_unlock(&dbs_mutex);
-
-	return count;
-}
-
 define_one_global_rw(sampling_rate);
 define_one_global_rw(up_threshold);
 define_one_global_rw(down_differential);
 define_one_global_rw(down_threshold);
 define_one_global_rw(hotplug_in_sampling_periods);
 define_one_global_rw(hotplug_out_sampling_periods);
-define_one_global_rw(ignore_nice_load);
-define_one_global_rw(io_is_busy);
 
 static struct attribute *dbs_attributes[] = {
 	&sampling_rate.attr,
@@ -412,8 +334,6 @@ static struct attribute *dbs_attributes[] = {
 	&down_threshold.attr,
 	&hotplug_in_sampling_periods.attr,
 	&hotplug_out_sampling_periods.attr,
-	&ignore_nice_load.attr,
-	&io_is_busy.attr,
 	NULL
 };
 
@@ -691,10 +611,6 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 
 			j_dbs_info->prev_cpu_idle = get_cpu_idle_time(j,
 						&j_dbs_info->prev_cpu_wall);
-			if (dbs_tuners_ins.ignore_nice) {
-				j_dbs_info->prev_cpu_nice =
-						kstat_cpu(j).cpustat.nice;
-			}
 
 			max_periods = max(DEFAULT_HOTPLUG_IN_SAMPLING_PERIODS,
 					DEFAULT_HOTPLUG_OUT_SAMPLING_PERIODS);

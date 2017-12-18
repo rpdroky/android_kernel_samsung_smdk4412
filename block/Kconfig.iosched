@@ -2,13 +2,6 @@ if BLOCK
 
 menu "IO Schedulers"
 
-config IOSCHED_FIFO
-	tristate "FIFO I/O scheduler"
-	default y
-	---help---
-	  Fifo is similar to no-op I/O scheduler and it's a minimal scheduler 
-	  that does basic merging and sorting.
-
 config IOSCHED_NOOP
 	bool
 	default y
@@ -73,13 +66,10 @@ config IOSCHED_SIO
 
 choice
 	prompt "Default I/O scheduler"
-	default DEFAULT_FIFO
+	default DEFAULT_CFQ
 	help
 	  Select the I/O scheduler which will be used by default for all
 	  block devices.
-
-	config DEFAULT_FIFO
- 		bool "FIFO" if IOSCHED_FIFO=y
 
 	config DEFAULT_DEADLINE
 		bool "Deadline" if IOSCHED_DEADLINE=y
@@ -100,7 +90,6 @@ endchoice
 
 config DEFAULT_IOSCHED
 	string
-	default "fifo" if DEFAULT_FIFO
 	default "deadline" if DEFAULT_DEADLINE
 	default "cfq" if DEFAULT_CFQ
     default "row" if DEFAULT_ROW
